@@ -67,3 +67,6 @@ Flastex stands for **Flow, Fast, Execution**, representing its core strengths:
 1. Clone the repository:
    ```bash
    git clone git@github.com:Flastex/flastex-bpm.git
+   ```
+2. Follow the installation instructions for setting up the environment.
+3. Start building workflows and contributing to Flastex!
