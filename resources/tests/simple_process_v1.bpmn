@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+    <!-- Process Definition -->
+    <process id="simple_process" name="Simple Process" isExecutable="true">
+
+        <!-- Start Event -->
+        <startEvent id="startEvent" name="Start Event" />
+
+        <!-- Task -->
+        <task id="userTask" name="User Task" />
+
+        <!-- Exclusive Gateway -->
+        <exclusiveGateway id="gateway1" name="Decision Gateway" gatewayDirection="Diverging" />
+
+        <!-- End Event 1 -->
+        <endEvent id="endEvent1" name="End Event 1" />
+
+        <!-- End Event 2 -->
+        <endEvent id="endEvent2" name="End Event 2" />
+
+        <!-- Sequence Flows -->
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="userTask" />
+        <sequenceFlow id="flow2" sourceRef="userTask" targetRef="gateway1" />
+        <sequenceFlow id="flow3" sourceRef="gateway1" targetRef="endEvent1" />
+        <sequenceFlow id="flow4" sourceRef="gateway1" targetRef="endEvent2" />
+
+    </process>
+</definitions>

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+cd ../api
+echo "Running cargo fmt in api..."
+cargo fmt --all -- --check
+
+cd ../core
+echo "Running cargo fmt in core..."
+cargo fmt --all -- --check
+
+cd ../db
+echo "Running cargo fmt in db..."
+cargo fmt --all -- --check
+
+cd ../services
+echo "Running cargo fmt in services..."
+cargo fmt --all -- --check
+
+echo "Code is properly formatted. Proceeding with commit."

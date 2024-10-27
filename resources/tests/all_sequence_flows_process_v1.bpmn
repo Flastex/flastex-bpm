@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+    <!-- Process Definition -->
+    <process id="simple_process" name="Simple Process" isExecutable="true">
+
+        <!-- Start Event -->
+        <startEvent id="startEvent" name="Start Event" />
+
+        <!-- Task -->
+        <task id="task1" name="Task1" />
+        <task id="task2" name="Task2" />
+        <task id="task3" name="Task3" />
+        <task id="task4" name="Task4" />
+        <task id="task5" name="Task5" />
+        <task id="task6" name="Task6" />
+        <task id="task7" name="Task7" />
+        <task id="task8" name="Task8" />
+
+        <!-- Exclusive Gateway -->
+        <parallelGateway id="gateway" name="Decision Gateway" />
+
+        <!-- End Event -->
+        <endEvent id="endEvent1" name="End Event 1" />
+        
+        <!-- Sequence Flows -->
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="gateway" />
+
+        <!-- XPath is default in BPMN -->
+        <sequenceFlow id="flow2" sourceRef="gateway" targetRef="task1">
+            <conditionExpression xsi:type="tFormalExpression">
+            <![CDATA[
+                ${resendRequest == 'Yes'}
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <!-- Javascript -->
+        <sequenceFlow id="flow3" sourceRef="gateway" targetRef="task2">
+            <conditionExpression xsi:type="tFormalExpression" language="http://www.javascript.com">
+            <![CDATA[
+                return myVariable == true;
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        
+        <!-- Python -->
+        <sequenceFlow id="flow4" sourceRef="gateway" targetRef="task3">
+            <conditionExpression xsi:type="tFormalExpression" language="http://www.python.org">
+            <![CDATA[
+                my_variable == 'approved'
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        
+        <!-- Groovy -->
+        <sequenceFlow id="flow5" sourceRef="gateway" targetRef="task4">
+            <conditionExpression xsi:type="tFormalExpression" language="http://groovy-lang.org">
+            <![CDATA[
+                myVariable > 10
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+        
+        <!-- Java -->
+        <sequenceFlow id="flow6" sourceRef="gateway" targetRef="task5">
+            <conditionExpression xsi:type="tFormalExpression" language="http://www.java.com">
+            <![CDATA[
+                myVariable.equals("yes")
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <!-- Lua -->
+        <sequenceFlow id="flow7" sourceRef="gateway" targetRef="task6">
+            <conditionExpression xsi:type="tFormalExpression" language="http://www.lua.org">
+            <![CDATA[
+                return myVariable == "approved"
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <!-- JUEL -->
+        <sequenceFlow id="flow8" sourceRef="gateway" targetRef="task7">
+            <conditionExpression xsi:type="tFormalExpression" language="http://www.juel.org">
+            <![CDATA[
+                #{myVariable == 'yes'}
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <!-- XPath -->
+        <sequenceFlow id="flow9" sourceRef="gateway" targetRef="task8">
+            <conditionExpression xsi:type="tFormalExpression" language="http://www.w3.org/1999/XPath">
+            <![CDATA[
+                ${resendRequest == 'Yes'}
+            ]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flow10" sourceRef="task1" targetRef="endEvent" />
+        <sequenceFlow id="flow11" sourceRef="task2" targetRef="endEvent" />
+        <sequenceFlow id="flow12" sourceRef="task3" targetRef="endEvent" />
+        <sequenceFlow id="flow13" sourceRef="task4" targetRef="endEvent" />
+        <sequenceFlow id="flow14" sourceRef="task5" targetRef="endEvent" />
+        <sequenceFlow id="flow15" sourceRef="task6" targetRef="endEvent" />
+        <sequenceFlow id="flow16" sourceRef="task7" targetRef="endEvent" />
+        <sequenceFlow id="flow17" sourceRef="task8" targetRef="endEvent" />
+
+    </process>
+</definitions>
