@@ -1,9 +1,11 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 use std::str::FromStr;
 
 use log::debug;
 use quick_xml::events::Event as XmlEvent;
 use quick_xml::{events::BytesStart, name::QName, Reader};
-use serde::de;
 
 use crate::bpmn::model::{
     errors::BPMNParseError,

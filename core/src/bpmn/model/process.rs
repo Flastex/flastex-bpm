@@ -1,3 +1,6 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 use std::collections::HashMap;
 
 use super::{connecting_objects::sequence_flows::SequenceFlow, flow_objects::FlowObject};
@@ -337,5 +340,188 @@ impl Default for Process {
             flow_objects: HashMap::new(),
             sequence_flows: Vec::new(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::bpmn::model::flow_objects::{
+        event::{self, Event, EventType},
+        FlowObjectType,
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_process_default() {
+        let process = Process::default();
+        assert_eq!(process.id(), "");
+        assert_eq!(process.name(), "");
+        assert_eq!(process.process_type(), &ProcessType::Private);
+        assert_eq!(
+            process.executable_status(),
+            &ExecutableStatus::NonExecutable
+        );
+        assert_eq!(process.process_state(), &ProcessState::Open);
+        assert_eq!(
+            process.definitional_collaboration_ref(),
+            &CollaborationRef::Undefined
+        );
+        assert_eq!(process.auditing(), &AuditingInfo::Absent);
+        assert_eq!(process.monitoring(), &MonitoringInfo::Disabled);
+        assert!(process.process_roles.is_empty());
+        assert!(process.properties.is_empty());
+        assert!(process.lane_sets.is_empty());
+        assert!(process.artifacts.is_empty());
+        assert!(process.resource_roles.is_empty());
+        assert!(process.correlation_subscriptions.is_empty());
+        assert!(process.supports.is_empty());
+        assert!(process.flow_objects.is_empty());
+        assert!(process.sequence_flows.is_empty());
+    }
+
+    #[test]
+    fn test_setters_and_getters() {
+        let mut process = Process::new();
+        process
+            .set_id("process_1")
+            .set_name("Test Process")
+            .set_process_type(ProcessType::Public)
+            .set_executable_status(ExecutableStatus::Executable)
+            .set_process_state(ProcessState::Closed)
+            .set_definitional_collaboration_ref(CollaborationRef::Defined("collab_1".to_string()))
+            .set_auditing(AuditingInfo::Present("audit_1".to_string()))
+            .set_monitoring(MonitoringInfo::Enabled("monitor_1".to_string()));
+
+        assert_eq!(process.id(), "process_1");
+        assert_eq!(process.name(), "Test Process");
+        assert_eq!(process.process_type(), &ProcessType::Public);
+        assert_eq!(process.executable_status(), &ExecutableStatus::Executable);
+        assert_eq!(process.process_state(), &ProcessState::Closed);
+        assert_eq!(
+            process.definitional_collaboration_ref(),
+            &CollaborationRef::Defined("collab_1".to_string())
+        );
+        assert_eq!(
+            process.auditing(),
+            &AuditingInfo::Present("audit_1".to_string())
+        );
+        assert_eq!(
+            process.monitoring(),
+            &MonitoringInfo::Enabled("monitor_1".to_string())
+        );
+    }
+
+    #[test]
+    fn test_add_and_remove_process_role() {
+        let mut process = Process::new();
+        process.add_process_role("role_1".to_string());
+        assert_eq!(process.process_roles.len(), 1);
+        assert_eq!(process.process_roles[0], "role_1");
+
+        process.remove_process_role("role_1");
+        assert!(process.process_roles.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_property() {
+        let mut process = Process::new();
+        process.add_property("property_1".to_string());
+        assert_eq!(process.properties.len(), 1);
+        assert_eq!(process.properties[0], "property_1");
+
+        process.remove_property("property_1");
+        assert!(process.properties.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_lane_set() {
+        let mut process = Process::new();
+        process.add_lane_set("lane_1".to_string());
+        assert_eq!(process.lane_sets.len(), 1);
+        assert_eq!(process.lane_sets[0], "lane_1");
+
+        process.remove_lane_set("lane_1");
+        assert!(process.lane_sets.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_artifact() {
+        let mut process = Process::new();
+        process.add_artifact("artifact_1".to_string());
+        assert_eq!(process.artifacts.len(), 1);
+        assert_eq!(process.artifacts[0], "artifact_1");
+
+        process.remove_artifact("artifact_1");
+        assert!(process.artifacts.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_resource_role() {
+        let mut process = Process::new();
+        process.add_resource_role("resource_role_1".to_string());
+        assert_eq!(process.resource_roles.len(), 1);
+        assert_eq!(process.resource_roles[0], "resource_role_1");
+
+        process.remove_resource_role("resource_role_1");
+        assert!(process.resource_roles.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_correlation_subscription() {
+        let mut process = Process::new();
+        process.add_correlation_subscription("subscription_1".to_string());
+        assert_eq!(process.correlation_subscriptions.len(), 1);
+        assert_eq!(process.correlation_subscriptions[0], "subscription_1");
+
+        process.remove_correlation_subscription("subscription_1");
+        assert!(process.correlation_subscriptions.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_support() {
+        let mut process = Process::new();
+        process.add_support("support_1".to_string());
+        assert_eq!(process.supports.len(), 1);
+        assert_eq!(process.supports[0], "support_1");
+
+        process.remove_support("support_1");
+        assert!(process.supports.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_flow_object() {
+        let mut process = Process::new();
+        let flow_object = FlowObject {
+            id: "flow_1".to_string(),
+            flow_object_type: FlowObjectType::Event(EventType::StartEvent(Event::new(
+                "start",
+                event::Type::StartEvent,
+            ))),
+        };
+        process.add_flow_object(flow_object.clone()).unwrap();
+        assert_eq!(process.flow_objects.len(), 1);
+        assert_eq!(process.flow_objects.get("flow_1").unwrap(), &flow_object);
+
+        process.remove_flow_object("flow_1").unwrap();
+        assert!(process.flow_objects.is_empty());
+    }
+
+    #[test]
+    fn test_add_and_remove_sequence_flow() {
+        let mut process = Process::new();
+        let mut sequence_flow = SequenceFlow::new();
+        sequence_flow.set_id("seq_1".to_string());
+
+        process.add_sequence_flow(sequence_flow.clone());
+        assert_eq!(process.sequence_flows.len(), 1);
+        let first_sequence_flow = process.sequence_flows.get(0);
+        assert!(first_sequence_flow.is_some());
+        let stored_sequence_flow = first_sequence_flow.unwrap();
+        assert_eq!(stored_sequence_flow.id(), sequence_flow.id());
+
+        process.remove_sequence_flow("seq_1").unwrap();
+        assert!(process.sequence_flows.is_empty());
     }
 }

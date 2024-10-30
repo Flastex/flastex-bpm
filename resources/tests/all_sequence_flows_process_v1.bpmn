@@ -11,14 +11,14 @@
         <startEvent id="startEvent" name="Start Event" />
 
         <!-- Task -->
-        <task id="task1" name="Task1" />
-        <task id="task2" name="Task2" />
-        <task id="task3" name="Task3" />
-        <task id="task4" name="Task4" />
-        <task id="task5" name="Task5" />
-        <task id="task6" name="Task6" />
-        <task id="task7" name="Task7" />
-        <task id="task8" name="Task8" />
+        <task id="task1" name="Task 1" />
+        <task id="task2" name="Task 2" />
+        <task id="task3" name="Task 3" />
+        <task id="task4" name="Task 4" />
+        <task id="task5" name="Task 5" />
+        <task id="task6" name="Task 6" />
+        <task id="task7" name="Task 7" />
+        <task id="task8" name="Task 8" />
 
         <!-- Exclusive Gateway -->
         <parallelGateway id="gateway" name="Decision Gateway" />

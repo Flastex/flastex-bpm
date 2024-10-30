@@ -1,3 +1,6 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 mod connecting_objects;
 mod flow_objects;
 mod process_xml_parser;
@@ -7,7 +10,6 @@ use log::debug;
 use process_xml_parser::parse_process_element;
 use quick_xml::events::Event as XmlEvent;
 use quick_xml::Reader;
-use serde::de;
 
 use std::fs::File;
 use std::io::{BufReader, Cursor};

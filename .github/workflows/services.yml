@@ -1,4 +1,4 @@
-name: Flastex BPM - API CI
+name: Flastex BPM - Services CI
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - main
       - release/**
     paths:
-      - 'api/**'
+      - 'services/**'
   pull_request:
     paths:
-      - 'api/**'
+      - 'services/**'
   workflow_dispatch:
     inputs:
       logLevel:
@@ -28,15 +28,15 @@ on:
         options: ['MANUAL', 'REGULAR']
         default: 'MANUAL'
 env:
-  PROJECT_FOLDER_NAME: "api"
+  PROJECT_FOLDER_NAME: "services"
 
 concurrency:
-  group: "api-ci-${{ github.ref }}"
+  group: "services-ci-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build and test Rust api
+    name: Build and test Rust services
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,7 +67,7 @@ jobs:
           crate: cargo-nextest
 
       - name: Build Rust project
-        working-directory: ./api
+        working-directory: ./services
         run: cargo build --verbose
 
       - name: Install tools for coverage
@@ -76,14 +76,14 @@ jobs:
           tool: nextest, grcov
 
       - name: Run tests
-        working-directory: ./api
+        working-directory: ./services
         env:
           RUSTFLAGS: "-A warnings -C instrument-coverage"
           RUST_BACKTRACE: full
         run: cargo nextest run --nocapture -v
 
       - name: Create coverage directory
-        run: mkdir -p api/target/coverage
+        run: mkdir -p services/target/coverage
 
       - name: Run grcov xml
         working-directory: ./${{ env.PROJECT_FOLDER_NAME }}

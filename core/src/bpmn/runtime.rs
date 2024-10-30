@@ -1,3 +1,6 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 /// Runtime Layer
 /// Tracks execution status, stores token information,
 /// and other runtime-specific data.

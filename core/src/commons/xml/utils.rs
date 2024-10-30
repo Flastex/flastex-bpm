@@ -1,3 +1,6 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 use quick_xml::events::BytesStart;
 use quick_xml::name::QName;
 use std::str;

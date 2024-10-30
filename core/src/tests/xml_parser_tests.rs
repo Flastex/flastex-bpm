@@ -1,7 +1,13 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 #[cfg(test)]
 mod tests {
     use crate::bpmn::model::connecting_objects::sequence_flows::{ConditionalFlow, NormalFlow};
-    use crate::bpmn::model::flow_objects::FlowObjectType;
+    use crate::bpmn::model::flow_objects::activity::ActivityType;
+    use crate::bpmn::model::flow_objects::event::{self, EventType};
+    use crate::bpmn::model::flow_objects::gateway::{self, GatewayDirection, GatewayType};
+    use crate::bpmn::model::flow_objects::{task, FlowObjectType};
     use crate::bpmn::model::script::ScriptType;
     use crate::bpmn::model::xml_parser::parse_bpmn_from_str;
 
@@ -34,7 +40,10 @@ mod tests {
                     .expect("Start event not found");
                 assert_eq!(
                     start_event.flow_object_type,
-                    FlowObjectType::Event,
+                    FlowObjectType::Event(EventType::StartEvent(event::Event::new(
+                        "Start Event",
+                        event::Type::StartEvent
+                    ))),
                     "Incorrect start event type"
                 );
 
@@ -44,7 +53,9 @@ mod tests {
                     .expect("User task not found");
                 assert_eq!(
                     user_task.flow_object_type,
-                    FlowObjectType::Task,
+                    FlowObjectType::Activity(ActivityType::Task(task::TaskType::UserTask(
+                        task::Task::new("User Task", task::Type::UserTask)
+                    ))),
                     "Incorrect task type"
                 );
 
@@ -54,7 +65,13 @@ mod tests {
                     .expect("Gateway not found");
                 assert_eq!(
                     gateway.flow_object_type,
-                    FlowObjectType::Gateway,
+                    FlowObjectType::Gateway(GatewayType::ExclusiveGateway(
+                        gateway::ExclusiveGateway::new(
+                            "Decision Gateway",
+                            GatewayDirection::Diverging,
+                            None
+                        )
+                    )),
                     "Incorrect gateway type"
                 );
 
@@ -64,7 +81,10 @@ mod tests {
                     .expect("End event 1 not found");
                 assert_eq!(
                     end_event1.flow_object_type,
-                    FlowObjectType::Event,
+                    FlowObjectType::Event(EventType::EndEvent(event::Event::new(
+                        "End Event 1",
+                        event::Type::EndEvent
+                    ))),
                     "Incorrect event type for endEvent1"
                 );
 
@@ -74,7 +94,10 @@ mod tests {
                     .expect("End event 2 not found");
                 assert_eq!(
                     end_event2.flow_object_type,
-                    FlowObjectType::Event,
+                    FlowObjectType::Event(EventType::EndEvent(event::Event::new(
+                        "End Event 2",
+                        event::Type::EndEvent
+                    ))),
                     "Incorrect event type for endEvent2"
                 );
 
@@ -155,7 +178,10 @@ mod tests {
                     .expect("Start event not found");
                 assert_eq!(
                     start_event.flow_object_type,
-                    FlowObjectType::Event,
+                    FlowObjectType::Event(EventType::StartEvent(event::Event::new(
+                        "Start Event",
+                        event::Type::StartEvent
+                    ))),
                     "Incorrect start event type"
                 );
 
@@ -166,7 +192,9 @@ mod tests {
                         .expect(&format!("Task{} not found", i));
                     assert_eq!(
                         task.flow_object_type,
-                        FlowObjectType::Task,
+                        FlowObjectType::Activity(ActivityType::Task(task::TaskType::UserTask(
+                            task::Task::new(format!("Task {i}").as_str(), task::Type::UserTask)
+                        ))),
                         "Incorrect task type"
                     );
                 }
@@ -177,7 +205,12 @@ mod tests {
                     .expect("Gateway not found");
                 assert_eq!(
                     gateway.flow_object_type,
-                    FlowObjectType::Gateway,
+                    FlowObjectType::Gateway(GatewayType::ParallelGateway(
+                        gateway::ParallelGateway::new(
+                            "Decision Gateway",
+                            GatewayDirection::Unspecified
+                        )
+                    )),
                     "Incorrect gateway type"
                 );
 
@@ -187,7 +220,10 @@ mod tests {
                     .expect("End event not found");
                 assert_eq!(
                     end_event.flow_object_type,
-                    FlowObjectType::Event,
+                    FlowObjectType::Event(EventType::EndEvent(event::Event::new(
+                        "End Event 1",
+                        event::Type::EndEvent
+                    ))),
                     "Incorrect end event type"
                 );
 

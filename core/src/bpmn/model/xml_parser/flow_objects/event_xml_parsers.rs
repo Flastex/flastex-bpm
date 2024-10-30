@@ -1,14 +1,18 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 use std::str::FromStr;
 
 use log::debug;
 use quick_xml::name::QName;
 
+use crate::bpmn::model::flow_objects::event;
 use crate::commons::xml::utils::extract_attribute;
 use crate::{
     bpmn::model::{
         errors::BPMNParseError,
         flow_objects::{
-            event::{Event, EventType},
+            event::Event,
             FlowObject, FlowObjectType,
         },
         process::Process,
@@ -26,13 +30,12 @@ pub(crate) fn parse_event_element(
         extract_tag_name(element).map_err(|err| BPMNParseError::XmlParseError(err.to_string()))?;
     let id = extract_attribute(element, &QName(b"id"))?;
     let name = extract_attribute(element, &QName(b"name"))?;
-    let event_type = EventType::from_str(&tag_name)?;
+    let event_type = event::Type::from_str(&tag_name)?;
 
-    let event = Event::new(&id, &name, &event_type);
+    let event = Event::new(&name, event_type);
     let flow_object = FlowObject {
         id: id.clone(),
-        flow_object_type: FlowObjectType::Event,
-        flow_object_behavior: Box::new(event),
+        flow_object_type: FlowObjectType::Event(event_type.to_event_type(event)),
     };
     process.add_flow_object(flow_object)?;
     Ok(())

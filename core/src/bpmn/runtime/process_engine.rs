@@ -1,11 +1,15 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 use std::collections::HashMap;
 
 use log::debug;
 
 use crate::bpmn::model::connecting_objects::sequence_flows::SequenceFlow;
-use crate::bpmn::model::flow_objects::event::{Event, EventType};
-use crate::bpmn::model::flow_objects::gateway::{GatewayBehavior, GatewayType};
-use crate::bpmn::model::flow_objects::task::{is_automatic_task, Task};
+use crate::bpmn::model::flow_objects::activity::ActivityType;
+use crate::bpmn::model::flow_objects::event::EventType;
+use crate::bpmn::model::flow_objects::gateway::GatewayType;
+use crate::bpmn::model::flow_objects::task::{is_automatic_task, TaskType};
 use crate::bpmn::model::flow_objects::{FlowObject, FlowObjectType};
 use crate::bpmn::runtime::process::ProcessInstance;
 use crate::bpmn::runtime::token::{Token, TokenState};
@@ -53,19 +57,17 @@ impl ProcessEngine {
             .process
             .flow_objects()
             .values()
-            .find(|node| matches!(node.flow_object_type, FlowObjectType::Event))
-            .and_then(|flow_object| {
-                let event = flow_object
-                    .flow_object_behavior
-                    .as_any()
-                    .downcast_ref::<Event>()
-                    .expect("Failed to downcast to Event");
-                if event.event_type == EventType::StartEvent {
-                    Some(flow_object)
+            .find_map(|node| {
+            if let FlowObjectType::Event(event_type) = &node.flow_object_type {
+                if let EventType::StartEvent(_) = event_type {
+                    Some(node)
                 } else {
                     None
                 }
-            })
+            } else {
+                None
+            }
+        })
     }
 
     /// Run the process by moving tokens through tasks, events, and gateways
@@ -86,46 +88,31 @@ impl ProcessEngine {
             .clone();
 
         match current_node.flow_object_type {
-            FlowObjectType::Task => {
-                let task = current_node
-                    .flow_object_behavior
-                    .as_any()
-                    .downcast_ref::<Task>()
-                    .expect("Failed to downcast FlowObjectBehavior to Task");
-                if is_automatic_task(task) {
-                    self.execute_task(task, token);
+            FlowObjectType::Activity(ActivityType::Task(task_type)) => {
+                if is_automatic_task(&task_type) {
+                    self.execute_task(&task_type, token);
                     self.move_token_to_next_node(token);
                 } else {
-                    self.wait_for_user_task(task);
+                    self.wait_for_user_task(&task_type);
                 }
             }
-            FlowObjectType::Gateway => {
-                let gateway = current_node
-                    .flow_object_behavior
-                    .as_any()
-                    .downcast_ref::<Box<dyn GatewayBehavior>>()
-                    .expect("Failed to downcast FlowObjectBehavior to GatewayBehavior");
-                self.handle_gateway(gateway, token);
+            FlowObjectType::Gateway(gateway_type) => {
+                self.handle_gateway(gateway_type, token);
             }
-            FlowObjectType::Event => {
-                let event = current_node
-                    .flow_object_behavior
-                    .as_any()
-                    .downcast_ref::<Event>()
-                    .expect("Failed to downcast FlowObjectBehavior to Event");
-                self.handle_event(event, token);
+            FlowObjectType::Event(event_type) => {
+                self.handle_event(&event_type, token);
             }
         }
     }
 
     /// Executes an automatic task (e.g., service or script task)
-    fn execute_task(&self, task: &Task, _token: &Token) {
-        println!("Executing task: {:?}", task);
+    fn execute_task(&self, task_type: &TaskType, _token: &Token) {
+        println!("Executing task: {:?}", task_type);
     }
 
     /// Pauses the process and waits for user input
-    fn wait_for_user_task(&mut self, task: &Task) {
-        println!("Waiting for user input for task: {:?}", task);
+    fn wait_for_user_task(&mut self, task_type: &TaskType) {
+        println!("Waiting for user input for task: {:?}", task_type);
     }
 
     /// Moves a token to the next node based on outgoing sequence flows
@@ -151,28 +138,28 @@ impl ProcessEngine {
         }
     }
 
-    fn handle_gateway(&mut self, gateway: &Box<dyn GatewayBehavior>, _token: &Token) {
-        match gateway.gateway_type() {
-            GatewayType::ComplexGateway => {
+    fn handle_gateway(&mut self, gateway_type: GatewayType, _token: &Token) {
+        match gateway_type {
+            GatewayType::ComplexGateway(gateway) => {
                 println!("Handling complex gateway: {:?}", gateway);
             }
-            GatewayType::EventBasedGateway => {
+            GatewayType::EventBasedGateway(gateway) => {
                 println!("Handling event-based gateway: {:?}", gateway);
             }
-            GatewayType::ExclusiveGateway => {
+            GatewayType::ExclusiveGateway(gateway) => {
                 println!("Handling exclusive gateway: {:?}", gateway);
             }
-            GatewayType::InclusiveGateway => {
+            GatewayType::InclusiveGateway(gateway) => {
                 println!("Handling inclusive gateway: {:?}", gateway);
             }
-            GatewayType::ParallelGateway => {
+            GatewayType::ParallelGateway(gateway) => {
                 println!("Handling parallel gateway: {:?}", gateway);
             }
         }
     }
 
-    fn handle_event(&mut self, event: &Event, _token: &Token) {
+    fn handle_event(&mut self, event_type: &EventType, _token: &Token) {
         // Logic for handling start, end, and intermediate events
-        println!("Handling event: {:?}", event);
+        println!("Handling event: {:?}", event_type);
     }
 }

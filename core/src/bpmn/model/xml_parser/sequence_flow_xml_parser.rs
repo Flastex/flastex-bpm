@@ -1,4 +1,5 @@
-use std::str::FromStr;
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
 
 use crate::bpmn::model::connecting_objects::sequence_flows::{ImmediateFlag, SequenceFlow};
 use crate::bpmn::model::errors::BPMNParseError;
@@ -8,7 +9,6 @@ use log::debug;
 use quick_xml::events::{BytesStart, Event as XmlEvent};
 use quick_xml::name::QName;
 use quick_xml::reader::Reader;
-use serde::de;
 
 use crate::bpmn::model::process::Process;
 

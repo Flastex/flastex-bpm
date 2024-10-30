@@ -1,52 +1,64 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 use std::any::Any;
 
-use super::activity::Activity;
-use super::{FlowObjectBehavior, FlowObjectId};
+use super::{activity::ActivityBehavior, FlowObjectBehavior};
 
-#[derive(Clone, strum::Display, strum::EnumString, PartialEq, Debug)]
+#[derive(Clone, strum::Display, strum::AsRefStr, strum::EnumDiscriminants, PartialEq, Debug)]
+#[strum_discriminants(name(Type))]
 pub enum TaskType {
-    UserTask,
-    ServiceTask,
-    ScriptTask,
+    // these will be different Task structs
+    UserTask(Task),
+    ServiceTask(Task),
+    ScriptTask(Task),
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Task {
-    pub id: FlowObjectId,
     pub name: String,
-    pub task_type: TaskType,
+    task_type: Type,
 }
 
 impl Task {
-    pub fn new(id: &FlowObjectId, name: &str, task_type: &TaskType) -> Self {
+    pub fn new(name: &str, task_type: Type) -> Self {
         Task {
-            id: id.clone(),
             name: name.to_string(),
-            task_type: task_type.clone(),
+            task_type: task_type,
         }
+    }
+
+    pub fn task_type(&self) -> &Type {
+        &self.task_type
     }
 }
 
-impl Activity for Task {
-    fn id(&self) -> &FlowObjectId {
-        &self.id
-    }
+impl ActivityBehavior for Task {
 
     fn name(&self) -> &str {
         &self.name
     }
+    
+    fn activity_type(&self) -> super::activity::Type {
+        super::activity::Type::Task
+    }
 }
 
 impl FlowObjectBehavior for Task {
-    fn r#type(&self) -> super::FlowObjectType {
-        super::FlowObjectType::Task
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn flow_object_type(&self) -> super::Type {
+        super::Type::Activity
+    }
 }
 
-pub fn is_automatic_task(task: &Task) -> bool {
-    task.task_type == TaskType::ServiceTask || task.task_type == TaskType::ScriptTask
+
+pub fn is_automatic_task(task_type: &TaskType) -> bool {
+    match task_type {
+        TaskType::ServiceTask(_) => true,
+        TaskType::ScriptTask(_) => true,
+        _ => false,        
+    }
 }

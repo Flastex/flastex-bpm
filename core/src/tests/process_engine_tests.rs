@@ -1,3 +1,6 @@
+// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details.
+
 // #[cfg(test)]
 // mod tests {
 //     use crate::bpmn::model::model_xml_parser::parse_bpmn_from_str;

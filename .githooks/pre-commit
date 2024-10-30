@@ -17,3 +17,17 @@ echo "Running cargo fmt in services..."
 cargo fmt --all -- --check
 
 echo "Code is properly formatted. Proceeding with commit."
+
+# Define the license header
+LICENSE_HEADER="// This file is part of Flastex BPM, an AGPLv3 licensed project.
+// See the LICENSE.md file at the root of the repository for details."
+
+# Loop over each .rs file in the repository
+find . -type f -name "*.rs" | while read -r file; do
+    # Check if the license header is already present
+    if ! grep -q "$LICENSE_HEADER" "$file"; then
+        # Insert the license header at the top of the file if it's missing
+        echo "$LICENSE_HEADER\n\n$(cat "$file")" > "$file"
+        echo "Added license header to $file"
+    fi
+done
