@@ -4,3 +4,34 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+# XML Read/Write
+quick-xml = "0.36.2"
+
+# Logging
+log = "0.4.22"
+
+# Json
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+serde_yaml = "0.9.34"
+
+# Enum
+strum = { version = "0.26.3", features = ["derive"] }
+
+# Time
+chrono = { version = "0.4.38", features = ["serde"] }
+
+# Misc
+uuid = {version = "1.10.0", features = [
+    "v4",                # Lets you generate random UUIDs
+    "v5",                # Lets you generate UUIDs based on a namespace and name
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "serde",             # Implement Serialize and Deserialize for UUID
+]}
+
+
+[dev-dependencies]
+env_logger = "0.11.5"
+ctor = "0.2.8"
+assertor = "0.0.3"
