@@ -1,0 +1,126 @@
+name: Flastex BPM - API CI
+
+on:
+  push:
+    branches:
+      - main
+      - release/**
+    paths:
+      - 'api/**'
+  pull_request:
+    paths:
+      - 'api/**'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+      tags:
+        description: 'Build Type'
+        required: false
+        type: choice
+        options: ['MANUAL', 'REGULAR']
+        default: 'MANUAL'
+env:
+  PROJECT_FOLDER_NAME: "api"
+
+concurrency:
+  group: "api-ci-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and test Rust api
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      RUST_BACKTRACE: "1"
+      LLVM_PROFILE_FILE: target/coverage/%p-%m.profraw
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        # Select toolchain either by action or manual rustup calls should happen
+        # before the plugin, as the cache uses the current rustc version as its cache key
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.7.3
+
+      - name: Install llvm preview tools
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-nextest
+
+      - name: Build Rust project
+        working-directory: ./api
+        run: cargo build --verbose
+
+      - name: Install tools for coverage
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest, grcov
+
+      - name: Run tests
+        working-directory: ./api
+        env:
+          RUSTFLAGS: "-A warnings -C instrument-coverage"
+          RUST_BACKTRACE: full
+        run: cargo nextest run --nocapture -v
+
+      - name: Create coverage directory
+        run: mkdir -p api/target/coverage
+
+      - name: Run grcov xml
+        working-directory: ./${{ env.PROJECT_FOLDER_NAME }}
+        run: |
+          grcov target/coverage -b target/debug -s . -t cobertura -o target/coverage.xml --branch --ignore-not-existing --keep-only "src/**"
+
+      - name: Run grcov lcov
+        working-directory: ./${{ env.PROJECT_FOLDER_NAME }}
+        run: |
+          grcov target/coverage -b target/debug -s . -t lcov -o target/coverage.lcov --branch --ignore-not-existing --keep-only "src/**"
+
+      - name: Run grcov html
+        working-directory: ./${{ env.PROJECT_FOLDER_NAME }}
+        run: |
+          grcov target/coverage -b target/debug -s . -t html -o target/coverage.html --branch --ignore-not-existing --keep-only "src/**"
+
+      - name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          badge: true
+          format: markdown
+          output: both
+          filename: ${{ env.PROJECT_FOLDER_NAME }}/target/coverage.xml
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: markdown coverage
+          recreate: true
+          path: code-coverage-results.md
+
+      - name: Archive coverage artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          retention-days: 5
+          path: |
+            ${{ env.PROJECT_FOLDER_NAME }}/target/coverage.xml
+            ${{ env.PROJECT_FOLDER_NAME }}/target/coverage.lcov
+            ${{ env.PROJECT_FOLDER_NAME }}/target/coverage.html

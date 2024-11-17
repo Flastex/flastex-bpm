@@ -30,4 +30,4 @@ engine.execute();
 - Error handling and recovery
 
 ## Contributing
-We welcome contributions! Please check the [contributing guidelines](../CONTRIBUTING.md) to get started.
+We appreciate your interest in contributing to Flastex! Please follow the guidelines outlined in our [CONTRIBUTING.md](../CONTRIBUTING.md) document for instructions on how to contribute, submit bug reports, or suggest enhancements.

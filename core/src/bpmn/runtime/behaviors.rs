@@ -1,6 +1,7 @@
 // This file is part of Flastex BPM, an AGPLv3 licensed project.
 // See the LICENSE.md file at the root of the repository for details.
 
-fn main() {
-    println!("Hello, world!");
-}
+pub mod event_behaviors;
+pub mod flow_object_behavior;
+pub mod gateway_behaviors;
+pub mod task_behaviors;
