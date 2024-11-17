@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::bpmn::model::connecting_objects::sequence_flows::{ConditionalFlow, NormalFlow};
+    use crate::bpmn::model::connecting_objects::sequence_flows::SequenceFlowType;
     use crate::bpmn::model::flow_objects::activity::ActivityType;
     use crate::bpmn::model::flow_objects::event::{self, EventType};
     use crate::bpmn::model::flow_objects::gateway::{self, GatewayDirection, GatewayType};
@@ -35,11 +35,10 @@ mod tests {
 
                 // Assert specific flow objects exist
                 let start_event = process
-                    .flow_objects()
-                    .get("startEvent")
+                    .flow_object(&"startEvent".into())
                     .expect("Start event not found");
                 assert_eq!(
-                    start_event.flow_object_type,
+                    *start_event.flow_object_type(),
                     FlowObjectType::Event(EventType::StartEvent(event::Event::new(
                         "Start Event",
                         event::Type::StartEvent
@@ -48,11 +47,10 @@ mod tests {
                 );
 
                 let user_task = process
-                    .flow_objects()
-                    .get("userTask")
+                    .flow_object(&"userTask".into())
                     .expect("User task not found");
                 assert_eq!(
-                    user_task.flow_object_type,
+                    *user_task.flow_object_type(),
                     FlowObjectType::Activity(ActivityType::Task(task::TaskType::UserTask(
                         task::Task::new("User Task", task::Type::UserTask)
                     ))),
@@ -60,11 +58,10 @@ mod tests {
                 );
 
                 let gateway = process
-                    .flow_objects()
-                    .get("gateway1")
+                    .flow_object(&"gateway1".into())
                     .expect("Gateway not found");
                 assert_eq!(
-                    gateway.flow_object_type,
+                    *gateway.flow_object_type(),
                     FlowObjectType::Gateway(GatewayType::ExclusiveGateway(
                         gateway::ExclusiveGateway::new(
                             "Decision Gateway",
@@ -76,11 +73,10 @@ mod tests {
                 );
 
                 let end_event1 = process
-                    .flow_objects()
-                    .get("endEvent1")
+                    .flow_object(&"endEvent1".into())
                     .expect("End event 1 not found");
                 assert_eq!(
-                    end_event1.flow_object_type,
+                    *end_event1.flow_object_type(),
                     FlowObjectType::Event(EventType::EndEvent(event::Event::new(
                         "End Event 1",
                         event::Type::EndEvent
@@ -89,11 +85,10 @@ mod tests {
                 );
 
                 let end_event2 = process
-                    .flow_objects()
-                    .get("endEvent2")
+                    .flow_object(&"endEvent2".into())
                     .expect("End event 2 not found");
                 assert_eq!(
-                    end_event2.flow_object_type,
+                    *end_event2.flow_object_type(),
                     FlowObjectType::Event(EventType::EndEvent(event::Event::new(
                         "End Event 2",
                         event::Type::EndEvent
@@ -173,11 +168,10 @@ mod tests {
 
                 // Assert specific flow objects exist
                 let start_event = process
-                    .flow_objects()
-                    .get("startEvent")
+                    .flow_object(&"startEvent".into())
                     .expect("Start event not found");
                 assert_eq!(
-                    start_event.flow_object_type,
+                    *start_event.flow_object_type(),
                     FlowObjectType::Event(EventType::StartEvent(event::Event::new(
                         "Start Event",
                         event::Type::StartEvent
@@ -187,11 +181,10 @@ mod tests {
 
                 for i in 1..=8 {
                     let task = process
-                        .flow_objects()
-                        .get(&format!("task{}", i))
+                        .flow_object(&format!("task{}", i).into())
                         .expect(&format!("Task{} not found", i));
                     assert_eq!(
-                        task.flow_object_type,
+                        *task.flow_object_type(),
                         FlowObjectType::Activity(ActivityType::Task(task::TaskType::UserTask(
                             task::Task::new(format!("Task {i}").as_str(), task::Type::UserTask)
                         ))),
@@ -200,11 +193,10 @@ mod tests {
                 }
 
                 let gateway = process
-                    .flow_objects()
-                    .get("gateway")
+                    .flow_object(&"gateway".into())
                     .expect("Gateway not found");
                 assert_eq!(
-                    gateway.flow_object_type,
+                    *gateway.flow_object_type(),
                     FlowObjectType::Gateway(GatewayType::ParallelGateway(
                         gateway::ParallelGateway::new(
                             "Decision Gateway",
@@ -215,11 +207,10 @@ mod tests {
                 );
 
                 let end_event = process
-                    .flow_objects()
-                    .get("endEvent1")
+                    .flow_object(&"endEvent1".into())
                     .expect("End event not found");
                 assert_eq!(
-                    end_event.flow_object_type,
+                    *end_event.flow_object_type(),
                     FlowObjectType::Event(EventType::EndEvent(event::Event::new(
                         "End Event 1",
                         event::Type::EndEvent
@@ -272,33 +263,34 @@ mod tests {
                         .iter()
                         .find(|flow| flow.id() == flow_id)
                         .expect(&format!("Sequence flow '{}' not found", flow_id));
-                    let sequence_flow_behavior = flow.sequence_flow_behavior();
-                    let conditional_flow: ConditionalFlow = sequence_flow_behavior
-                        .as_any()
-                        .downcast_ref::<ConditionalFlow>()
-                        .expect("Expected ConditionalFlow")
-                        .clone();
-                    assert!(conditional_flow.condition_expression().is_some());
-                    let condition_expression = conditional_flow.condition_expression().unwrap();
-                    // Assert the script content
-                    assert_eq!(
-                        condition_expression.script(),
-                        expected_expression,
-                        "Incorrect condition expression for {}",
-                        flow_id
-                    );
+                    let sequence_flow_type = flow.flow_type();
 
-                    // Assert the language by matching the Script variant to the expected ScriptType's schema reference
-                    let script_type = match expected_language {
-                        Some(language) => ScriptType::from_schema_ref(language).unwrap(),
-                        None => ScriptType::default(),
-                    };
-                    assert_eq!(
-                        condition_expression.script_type().schema_ref(),
-                        script_type.schema_ref(),
-                        "Incorrect language for {}",
-                        flow_id
-                    );
+                    assert!(matches!(
+                        sequence_flow_type,
+                        SequenceFlowType::Conditional(_)
+                    ));
+                    if let SequenceFlowType::Conditional(conditional_flow) = sequence_flow_type {
+                        let condition_expression = conditional_flow.condition().unwrap();
+                        // Assert the script content
+                        assert_eq!(
+                            condition_expression.script(),
+                            expected_expression,
+                            "Incorrect condition expression for {}",
+                            flow_id
+                        );
+
+                        // Assert the language by matching the Script variant to the expected ScriptType's schema reference
+                        let script_type = match expected_language {
+                            Some(language) => ScriptType::from_schema_ref(language).unwrap(),
+                            None => ScriptType::default(),
+                        };
+                        assert_eq!(
+                            condition_expression.script_type().schema_ref(),
+                            script_type.schema_ref(),
+                            "Incorrect language for {}",
+                            flow_id
+                        );
+                    }
                 }
 
                 // Assert other flows without conditions
@@ -311,11 +303,8 @@ mod tests {
                         .iter()
                         .find(|flow| flow.id() == flow_id)
                         .expect(&format!("Sequence flow '{}' not found", flow_id));
-                    let sequence_flow_behavior = flow.sequence_flow_behavior();
-                    assert!(sequence_flow_behavior
-                        .as_any()
-                        .downcast_ref::<NormalFlow>()
-                        .is_some());
+                    let sequence_flow_type = flow.flow_type();
+                    assert!(matches!(sequence_flow_type, SequenceFlowType::Normal(_)));
                 }
             }
             Err(e) => {

@@ -19,6 +19,9 @@ serde_yaml = "0.9.34"
 # Enum
 strum = { version = "0.26.3", features = ["derive"] }
 
+# Error Handling
+thiserror = "1.0.68"
+
 # Time
 chrono = { version = "0.4.38", features = ["serde"] }
 
@@ -29,7 +32,6 @@ uuid = {version = "1.10.0", features = [
     "fast-rng",          # Use a faster (but still sufficiently random) RNG
     "serde",             # Implement Serialize and Deserialize for UUID
 ]}
-
 
 [dev-dependencies]
 env_logger = "0.11.5"

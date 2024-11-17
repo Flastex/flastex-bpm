@@ -1,15 +1,18 @@
 // This file is part of Flastex BPM, an AGPLv3 licensed project.
 // See the LICENSE.md file at the root of the repository for details.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
-use super::{connecting_objects::sequence_flows::SequenceFlow, flow_objects::FlowObject};
+use super::{
+    connecting_objects::sequence_flows::{SequenceFlow, SequenceFlowId},
+    flow_objects::{FlowObject, FlowObjectId},
+};
 
-#[derive(Clone, strum::Display, strum::EnumString, PartialEq, Debug)]
+#[derive(Clone, strum::Display, PartialEq, Debug)]
 pub enum ProcessError {
-    FlowObjectAlreadyExists(String),
-    FlowObjectNotFound(String),
-    SequenceFlowNotFound(String),
+    FlowObjectAlreadyExists(FlowObjectId),
+    FlowObjectNotFound(FlowObjectId),
+    SequenceFlowNotFound(SequenceFlowId),
 }
 
 impl std::error::Error for ProcessError {}
@@ -22,7 +25,7 @@ type Artifacts = Vec<String>;
 type ResourceRoles = Vec<String>;
 type CorrelationSubscriptions = Vec<String>;
 type Supports = Vec<String>;
-type FlowObjects = HashMap<String, FlowObject>;
+type FlowObjects = HashMap<FlowObjectId, FlowObject>;
 type SequenceFlows = Vec<SequenceFlow>;
 
 /// Enum to describe the executability of a process.
@@ -80,10 +83,25 @@ pub enum MonitoringInfo {
     Disabled,
 }
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ProcessId(String);
+
+impl ProcessId {
+    pub fn new(id: &str) -> Self {
+        ProcessId(id.to_string())
+    }
+}
+
+impl fmt::Display for ProcessId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// The `Process` struct represents a BPMN process with various types and attributes.
 #[derive(Clone, Debug)]
 pub struct Process {
-    id: String,
+    id: ProcessId,
     name: String,
     process_type: ProcessType,
     executable_status: ExecutableStatus,
@@ -112,13 +130,13 @@ impl Process {
     // Getters and setters using custom types instead of bool and Option<T>
 
     /// Returns the id.
-    pub fn id(&self) -> &str {
+    pub fn id(&self) -> &ProcessId {
         &self.id
     }
 
     /// Sets the id.
-    pub fn set_id(&mut self, id: &str) -> &mut Self {
-        self.id = String::from(id);
+    pub fn set_id(&mut self, id: ProcessId) -> &mut Self {
+        self.id = id.clone();
         self
     }
 
@@ -279,17 +297,27 @@ impl Process {
         &self.flow_objects
     }
 
-    pub fn add_flow_object(&mut self, flowobject: FlowObject) -> Result<&mut Self, ProcessError> {
-        if self.flow_objects.contains_key(&flowobject.id) {
-            return Err(ProcessError::FlowObjectAlreadyExists(flowobject.id.clone()));
+    pub fn flow_object(&self, flow_object_id: &FlowObjectId) -> Option<&FlowObject> {
+        self.flow_objects.get(flow_object_id)
+    }
+
+    pub fn add_flow_object(&mut self, flow_object: FlowObject) -> Result<&mut Self, ProcessError> {
+        if self.flow_objects.contains_key(flow_object.id()) {
+            return Err(ProcessError::FlowObjectAlreadyExists(
+                flow_object.id().clone(),
+            ));
         }
-        self.flow_objects.insert(flowobject.id.clone(), flowobject);
+        self.flow_objects
+            .insert(flow_object.id().clone(), flow_object);
         Ok(self)
     }
 
-    pub fn remove_flow_object(&mut self, flowobject_id: &str) -> Result<&mut Self, ProcessError> {
-        if self.flow_objects.remove(flowobject_id).is_none() {
-            return Err(ProcessError::FlowObjectNotFound(flowobject_id.to_string()));
+    pub fn remove_flow_object(
+        &mut self,
+        flow_object_id: &FlowObjectId,
+    ) -> Result<&mut Self, ProcessError> {
+        if self.flow_objects.remove(flow_object_id).is_none() {
+            return Err(ProcessError::FlowObjectNotFound(flow_object_id.clone()));
         }
         Ok(self)
     }
@@ -306,13 +334,13 @@ impl Process {
 
     pub fn remove_sequence_flow(
         &mut self,
-        sequence_flow_id: &str,
+        sequence_flow_id: &SequenceFlowId,
     ) -> Result<&mut Self, ProcessError> {
         let index = self
             .sequence_flows
             .iter()
             .position(|sf| sf.id() == sequence_flow_id)
-            .ok_or_else(|| ProcessError::SequenceFlowNotFound(sequence_flow_id.to_string()))?;
+            .ok_or_else(|| ProcessError::SequenceFlowNotFound(sequence_flow_id.clone()))?;
         self.sequence_flows.remove(index);
         Ok(self)
     }
@@ -322,7 +350,7 @@ impl Default for Process {
     /// Initializes the default values for `Process`.
     fn default() -> Self {
         Process {
-            id: String::default(),
+            id: ProcessId(String::default()),
             name: String::default(),
             process_type: ProcessType::default(),
             executable_status: ExecutableStatus::NonExecutable,
@@ -356,7 +384,7 @@ mod tests {
     #[test]
     fn test_process_default() {
         let process = Process::default();
-        assert_eq!(process.id(), "");
+        assert_eq!(*process.id(), ProcessId(String::default()));
         assert_eq!(process.name(), "");
         assert_eq!(process.process_type(), &ProcessType::Private);
         assert_eq!(
@@ -385,7 +413,7 @@ mod tests {
     fn test_setters_and_getters() {
         let mut process = Process::new();
         process
-            .set_id("process_1")
+            .set_id(ProcessId::new("process_1"))
             .set_name("Test Process")
             .set_process_type(ProcessType::Public)
             .set_executable_status(ExecutableStatus::Executable)
@@ -394,7 +422,7 @@ mod tests {
             .set_auditing(AuditingInfo::Present("audit_1".to_string()))
             .set_monitoring(MonitoringInfo::Enabled("monitor_1".to_string()));
 
-        assert_eq!(process.id(), "process_1");
+        assert_eq!(*process.id(), ProcessId::new("process_1"));
         assert_eq!(process.name(), "Test Process");
         assert_eq!(process.process_type(), &ProcessType::Public);
         assert_eq!(process.executable_status(), &ExecutableStatus::Executable);
@@ -493,26 +521,31 @@ mod tests {
     #[test]
     fn test_add_and_remove_flow_object() {
         let mut process = Process::new();
-        let flow_object = FlowObject {
-            id: "flow_1".to_string(),
-            flow_object_type: FlowObjectType::Event(EventType::StartEvent(Event::new(
+        let flow_object_id = FlowObjectId::new("flow_1");
+        let flow_object = FlowObject::new(
+            flow_object_id.clone(),
+            FlowObjectType::Event(EventType::StartEvent(Event::new(
                 "start",
                 event::Type::StartEvent,
             ))),
-        };
+        );
         process.add_flow_object(flow_object.clone()).unwrap();
         assert_eq!(process.flow_objects.len(), 1);
-        assert_eq!(process.flow_objects.get("flow_1").unwrap(), &flow_object);
+        assert_eq!(process.flow_object(&flow_object_id).unwrap(), &flow_object);
 
-        process.remove_flow_object("flow_1").unwrap();
+        process.remove_flow_object(&flow_object_id).unwrap();
         assert!(process.flow_objects.is_empty());
     }
 
     #[test]
     fn test_add_and_remove_sequence_flow() {
         let mut process = Process::new();
-        let mut sequence_flow = SequenceFlow::new();
-        sequence_flow.set_id("seq_1".to_string());
+        let mut sequence_flow_builder = SequenceFlow::builder();
+        sequence_flow_builder
+            .id(SequenceFlowId::new("seq_1"))
+            .source_ref(FlowObjectId::new("flow_1"))
+            .target_ref(FlowObjectId::new("flow_2"));
+        let sequence_flow = sequence_flow_builder.build().unwrap();
 
         process.add_sequence_flow(sequence_flow.clone());
         assert_eq!(process.sequence_flows.len(), 1);
@@ -521,7 +554,9 @@ mod tests {
         let stored_sequence_flow = first_sequence_flow.unwrap();
         assert_eq!(stored_sequence_flow.id(), sequence_flow.id());
 
-        process.remove_sequence_flow("seq_1").unwrap();
+        process
+            .remove_sequence_flow(&SequenceFlowId::new("seq_1"))
+            .unwrap();
         assert!(process.sequence_flows.is_empty());
     }
 }

@@ -1,8 +1,11 @@
 // This file is part of Flastex BPM, an AGPLv3 licensed project.
 // See the LICENSE.md file at the root of the repository for details.
 
-use crate::bpmn::model::connecting_objects::sequence_flows::{ImmediateFlag, SequenceFlow};
+use crate::bpmn::model::connecting_objects::sequence_flows::{
+    ImmediateFlag, SequenceFlow, SequenceFlowId,
+};
 use crate::bpmn::model::errors::BPMNParseError;
+use crate::bpmn::model::flow_objects::FlowObjectId;
 use crate::bpmn::model::script::{Script, ScriptType};
 use crate::commons::xml::constants::XmlElementType;
 use log::debug;
@@ -25,16 +28,18 @@ pub fn parse_sequence_flow_element(
 ) -> Result<(), BPMNParseError> {
     debug!("Parsing sequence flow element");
     debug!("Element type: {:?}", xml_element_type);
-    let mut sequence_flow = SequenceFlow::new();
+    let mut sequence_flow_builder = SequenceFlow::builder();
 
-    let id = extract_attribute(element, &QName(b"id"))?;
-    sequence_flow.set_id(id);
-    let source_ref = extract_attribute(element, &QName(b"sourceRef"))?;
-    sequence_flow.set_source_ref(source_ref);
-    let target_ref = extract_attribute(element, &QName(b"targetRef"))?;
-    sequence_flow.set_target_ref(target_ref);
+    let id: SequenceFlowId = extract_attribute(element, &QName(b"id"))?.into();
+    sequence_flow_builder.id(id);
+    let source_ref_str = extract_attribute(element, &QName(b"sourceRef"))?;
+    let source_ref = FlowObjectId::new(source_ref_str.as_str());
+    sequence_flow_builder.source_ref(source_ref);
+    let target_ref_str = extract_attribute(element, &QName(b"targetRef"))?;
+    let target_ref = FlowObjectId::new(target_ref_str.as_str());
+    sequence_flow_builder.target_ref(target_ref);
     let is_immediate = extract_optional_bool_attribute(element, &QName(b"isImmediate"))?;
-    sequence_flow.set_is_immediate(match is_immediate {
+    sequence_flow_builder.is_immediate(match is_immediate {
         Some(b) => match b {
             true => ImmediateFlag::Immediate,
             false => ImmediateFlag::NonImmediate,
@@ -45,12 +50,15 @@ pub fn parse_sequence_flow_element(
     let script_condition = extract_conditional_flow(xml_reader, xml_element_type)?;
     if script_condition.is_some() {
         // If a condition is present, set the sequence flow as ConditionalFlow
-        sequence_flow.as_conditional(script_condition);
+        sequence_flow_builder.conditional(script_condition);
     } else {
         // Otherwise, default to NormalFlow (it can be a default flow at runtime)
-        sequence_flow.as_normal();
+        sequence_flow_builder.normal();
     }
 
+    let sequence_flow = sequence_flow_builder
+        .build()
+        .map_err(|e| BPMNParseError::XmlContentError(e.to_string()))?;
     process.add_sequence_flow(sequence_flow);
     return Ok(());
 }

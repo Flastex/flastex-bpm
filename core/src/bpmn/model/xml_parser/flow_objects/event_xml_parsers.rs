@@ -6,15 +6,12 @@ use std::str::FromStr;
 use log::debug;
 use quick_xml::name::QName;
 
-use crate::bpmn::model::flow_objects::event;
+use crate::bpmn::model::flow_objects::{event, FlowObjectId};
 use crate::commons::xml::utils::extract_attribute;
 use crate::{
     bpmn::model::{
         errors::BPMNParseError,
-        flow_objects::{
-            event::Event,
-            FlowObject, FlowObjectType,
-        },
+        flow_objects::{event::Event, FlowObject, FlowObjectType},
         process::Process,
     },
     commons::xml::utils::extract_tag_name,
@@ -28,15 +25,12 @@ pub(crate) fn parse_event_element(
     debug!("Parsing <event> element");
     let tag_name =
         extract_tag_name(element).map_err(|err| BPMNParseError::XmlParseError(err.to_string()))?;
-    let id = extract_attribute(element, &QName(b"id"))?;
+    let id: FlowObjectId = extract_attribute(element, &QName(b"id"))?.into();
     let name = extract_attribute(element, &QName(b"name"))?;
     let event_type = event::Type::from_str(&tag_name)?;
 
     let event = Event::new(&name, event_type);
-    let flow_object = FlowObject {
-        id: id.clone(),
-        flow_object_type: FlowObjectType::Event(event_type.to_event_type(event)),
-    };
+    let flow_object = FlowObject::new(id, FlowObjectType::Event(event_type.to_event_type(event)));
     process.add_flow_object(flow_object)?;
     Ok(())
 }

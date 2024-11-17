@@ -9,8 +9,9 @@ use activity::ActivityType;
 /// 3. Gateways
 use event::EventType;
 use gateway::GatewayType;
+use serde::{Deserialize, Serialize};
 use std::any::Any;
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 
 pub mod activity;
 pub mod event;
@@ -18,12 +19,74 @@ pub mod gateway;
 pub mod task;
 
 /// Alias for Flow Object IDs used in BPMN elements.
-pub type FlowObjectId = String;
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct FlowObjectId(String);
+
+impl FlowObjectId {
+    pub fn new(id: &str) -> Self {
+        FlowObjectId(id.to_string())
+    }
+}
+
+impl fmt::Display for FlowObjectId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for FlowObjectId {
+    fn from(id: String) -> Self {
+        FlowObjectId(id)
+    }
+}
+
+impl From<&str> for FlowObjectId {
+    fn from(id: &str) -> Self {
+        FlowObjectId(id.to_string())
+    }
+}
+
+impl std::ops::Deref for FlowObjectId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl PartialEq<str> for FlowObjectId {
+    fn eq(&self, other: &str) -> bool {
+        self.0 == other
+    }
+}
+
+impl PartialEq<&str> for FlowObjectId {
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FlowObject {
-    pub id: FlowObjectId,
-    pub flow_object_type: FlowObjectType,
+    id: FlowObjectId,
+    flow_object_type: FlowObjectType,
+}
+
+impl FlowObject {
+    pub fn new(id: FlowObjectId, flow_object_type: FlowObjectType) -> Self {
+        FlowObject {
+            id,
+            flow_object_type,
+        }
+    }
+
+    pub fn id(&self) -> &FlowObjectId {
+        &self.id
+    }
+
+    pub fn flow_object_type(&self) -> &FlowObjectType {
+        &self.flow_object_type
+    }
 }
 
 #[derive(Clone, strum::Display, strum::AsRefStr, strum::EnumDiscriminants, PartialEq, Debug)]
@@ -49,11 +112,11 @@ pub trait FlowObjectBehavior: Any + Debug + PartialEq {
     fn as_any(&self) -> &dyn Any;
 }
 
-pub fn flowobject_is_start_event(flow_object: &FlowObject) -> bool { 
+pub fn flowobject_is_start_event(flow_object: &FlowObject) -> bool {
     if let FlowObjectType::Event(event_type) = &flow_object.flow_object_type {
-         if let EventType::StartEvent(_) = event_type {
+        if let EventType::StartEvent(_) = event_type {
             return true;
-         }
+        }
     }
     false
 }
@@ -67,8 +130,11 @@ mod tests {
     #[test]
     fn test_flowobject_is_start_event() {
         let flow_object = FlowObject {
-            id: "1".to_string(),
-            flow_object_type: FlowObjectType::Event(EventType::StartEvent(Event::new("Start Event", event::Type::StartEvent))),
+            id: FlowObjectId("1".to_string()),
+            flow_object_type: FlowObjectType::Event(EventType::StartEvent(Event::new(
+                "Start Event",
+                event::Type::StartEvent,
+            ))),
         };
         assert_eq!(flowobject_is_start_event(&flow_object), true);
     }
@@ -76,8 +142,11 @@ mod tests {
     #[test]
     fn test_flowobject_is_not_start_event() {
         let flow_object = FlowObject {
-            id: "1".to_string(),
-            flow_object_type: FlowObjectType::Event(EventType::IntermediateEvent(Event::new("Intermediate Event", event::Type::IntermediateEvent))),
+            id: FlowObjectId("1".to_string()),
+            flow_object_type: FlowObjectType::Event(EventType::IntermediateEvent(Event::new(
+                "Intermediate Event",
+                event::Type::IntermediateEvent,
+            ))),
         };
         assert_eq!(flowobject_is_start_event(&flow_object), false);
     }

@@ -336,10 +336,9 @@ mod tests {
     fn test_exclusive_gateway_creation() {
         let name = "Exclusive Gateway";
         let direction = GatewayDirection::Diverging;
-        let default_flow = Some("flow_1".to_string());
+        let default_flow = Some(SequenceFlowId::new("flow_1"));
 
-        let gateway =
-            ExclusiveGateway::new(name, direction.clone(), default_flow.clone());
+        let gateway = ExclusiveGateway::new(name, direction.clone(), default_flow.clone());
 
         assert_eq!(gateway.name, name);
         assert_eq!(gateway.direction, direction);
@@ -361,10 +360,9 @@ mod tests {
     fn test_inclusive_gateway_creation() {
         let name = "Inclusive Gateway";
         let direction = GatewayDirection::Mixed;
-        let default_flow = Some("flow_2".to_string());
+        let default_flow = Some(SequenceFlowId::new("flow_2"));
 
-        let gateway =
-            InclusiveGateway::new(name, direction.clone(), default_flow.clone());
+        let gateway = InclusiveGateway::new(name, direction.clone(), default_flow.clone());
 
         assert_eq!(gateway.name, name);
         assert_eq!(gateway.direction, direction);
@@ -377,11 +375,7 @@ mod tests {
         let direction = GatewayDirection::Unspecified;
         let activation_conditions = vec!["condition_1".to_string(), "condition_2".to_string()];
 
-        let gateway = ComplexGateway::new(
-            name,
-            direction.clone(),
-            activation_conditions.clone(),
-        );
+        let gateway = ComplexGateway::new(name, direction.clone(), activation_conditions.clone());
 
         assert_eq!(gateway.name, name);
         assert_eq!(gateway.direction, direction);
@@ -412,10 +406,9 @@ mod tests {
     fn test_exclusive_gateway_behavior() {
         let name = "Exclusive Gateway";
         let direction = GatewayDirection::Diverging;
-        let default_flow = Some("flow_3".to_string());
+        let default_flow = Some(SequenceFlowId::new("flow_3"));
 
-        let gateway =
-            ExclusiveGateway::new(name, direction.clone(), default_flow.clone());
+        let gateway = ExclusiveGateway::new(name, direction.clone(), default_flow.clone());
 
         assert_eq!(gateway.gateway_type(), Type::ExclusiveGateway);
         assert_eq!(gateway.direction(), &direction);
@@ -438,10 +431,9 @@ mod tests {
     fn test_inclusive_gateway_behavior() {
         let name = "Inclusive Gateway";
         let direction = GatewayDirection::Mixed;
-        let default_flow = Some("flow_4".to_string());
+        let default_flow = Some(SequenceFlowId::new("flow_4"));
 
-        let gateway =
-            InclusiveGateway::new(name, direction.clone(), default_flow.clone());
+        let gateway = InclusiveGateway::new(name, direction.clone(), default_flow.clone());
 
         assert_eq!(gateway.gateway_type(), Type::InclusiveGateway);
         assert_eq!(gateway.direction(), &direction);
@@ -454,11 +446,7 @@ mod tests {
         let direction = GatewayDirection::Unspecified;
         let activation_conditions = vec!["condition_3".to_string(), "condition_4".to_string()];
 
-        let gateway = ComplexGateway::new(
-            name,
-            direction.clone(),
-            activation_conditions.clone(),
-        );
+        let gateway = ComplexGateway::new(name, direction.clone(), activation_conditions.clone());
 
         assert_eq!(gateway.gateway_type(), Type::ComplexGateway);
         assert_eq!(gateway.direction(), &direction);
@@ -488,10 +476,9 @@ mod tests {
     fn test_exclusive_gateway_as_any() {
         let name = "Exclusive Gateway";
         let direction = GatewayDirection::Diverging;
-        let default_flow = Some("flow_5".to_string());
+        let default_flow = Some(SequenceFlowId::new("flow_5"));
 
-        let gateway =
-            ExclusiveGateway::new(name, direction.clone(), default_flow.clone());
+        let gateway = ExclusiveGateway::new(name, direction.clone(), default_flow.clone());
 
         let any_ref: &dyn Any = gateway.as_any();
         assert!(any_ref.is::<ExclusiveGateway>());
@@ -512,10 +499,9 @@ mod tests {
     fn test_inclusive_gateway_as_any() {
         let name = "Inclusive Gateway";
         let direction = GatewayDirection::Mixed;
-        let default_flow = Some("flow_6".to_string());
+        let default_flow = Some(SequenceFlowId::new("flow_6"));
 
-        let gateway =
-            InclusiveGateway::new(name, direction.clone(), default_flow.clone());
+        let gateway = InclusiveGateway::new(name, direction.clone(), default_flow.clone());
 
         let any_ref: &dyn Any = gateway.as_any();
         assert!(any_ref.is::<InclusiveGateway>());
@@ -527,11 +513,7 @@ mod tests {
         let direction = GatewayDirection::Unspecified;
         let activation_conditions = vec!["condition_5".to_string(), "condition_6".to_string()];
 
-        let gateway = ComplexGateway::new(
-            name,
-            direction.clone(),
-            activation_conditions.clone(),
-        );
+        let gateway = ComplexGateway::new(name, direction.clone(), activation_conditions.clone());
 
         let any_ref: &dyn Any = gateway.as_any();
         assert!(any_ref.is::<ComplexGateway>());

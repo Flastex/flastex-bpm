@@ -2,5 +2,6 @@
 // See the LICENSE.md file at the root of the repository for details.
 
 pub mod event_behaviors;
+pub mod flow_object_behavior;
 pub mod gateway_behaviors;
 pub mod task_behaviors;

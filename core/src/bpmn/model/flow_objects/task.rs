@@ -6,7 +6,7 @@ use std::any::Any;
 use super::{activity::ActivityBehavior, FlowObjectBehavior};
 
 #[derive(Clone, strum::Display, strum::AsRefStr, strum::EnumDiscriminants, PartialEq, Debug)]
-#[strum_discriminants(name(Type))]
+#[strum_discriminants(derive(strum::EnumString), name(Type), strum(ascii_case_insensitive))]
 pub enum TaskType {
     // these will be different Task structs
     UserTask(Task),
@@ -24,7 +24,7 @@ impl Task {
     pub fn new(name: &str, task_type: Type) -> Self {
         Task {
             name: name.to_string(),
-            task_type: task_type,
+            task_type,
         }
     }
 
@@ -34,11 +34,10 @@ impl Task {
 }
 
 impl ActivityBehavior for Task {
-
     fn name(&self) -> &str {
         &self.name
     }
-    
+
     fn activity_type(&self) -> super::activity::Type {
         super::activity::Type::Task
     }
@@ -48,17 +47,16 @@ impl FlowObjectBehavior for Task {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    
+
     fn flow_object_type(&self) -> super::Type {
         super::Type::Activity
     }
 }
 
-
 pub fn is_automatic_task(task_type: &TaskType) -> bool {
     match task_type {
         TaskType::ServiceTask(_) => true,
         TaskType::ScriptTask(_) => true,
-        _ => false,        
+        _ => false,
     }
 }

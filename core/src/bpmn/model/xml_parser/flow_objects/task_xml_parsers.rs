@@ -21,16 +21,16 @@ pub(crate) fn parse_task_element(
     element: &quick_xml::events::BytesStart,
 ) -> Result<(), BPMNParseError> {
     debug!("Parsing <task> element");
-    let id: FlowObjectId = extract_attribute(element, &QName(b"id"))?;
+    let id: FlowObjectId = extract_attribute(element, &QName(b"id"))?.into();
     let name = extract_attribute(element, &QName(b"name"))?;
     // let task_type_str = extract_attribute(element, &QName(b"type"))?;
     // let task_type = TaskType::from_str(&task_type_str)?;
 
     let task = Task::new(&name, task::Type::UserTask);
-    let flow_object = FlowObject {
-        id: id.clone(),
-        flow_object_type: FlowObjectType::Activity(ActivityType::Task(TaskType::UserTask(task))),
-    };
+    let flow_object = FlowObject::new(
+        id,
+        FlowObjectType::Activity(ActivityType::Task(TaskType::UserTask(task))),
+    );
     process.add_flow_object(flow_object)?;
     Ok(())
 }

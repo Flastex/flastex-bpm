@@ -118,6 +118,9 @@ mod tests {
     use quick_xml::events::attributes::AttrError;
     use quick_xml::Error as XmlError;
 
+    use crate::bpmn::model::connecting_objects::sequence_flows::SequenceFlowId;
+    use crate::bpmn::model::flow_objects::FlowObjectId;
+
     use super::*;
 
     #[test]
@@ -182,7 +185,8 @@ mod tests {
 
     #[test]
     fn test_process_error_conversion() {
-        let process_error = ProcessError::SequenceFlowNotFound("test process error".to_string());
+        let process_error =
+            ProcessError::SequenceFlowNotFound(SequenceFlowId::new("sequence-flow-id"));
         let bpmn_error: BPMNParseError = process_error.into();
         match bpmn_error {
             BPMNParseError::ProcessError(_) => (),
@@ -223,7 +227,7 @@ mod tests {
         assert_eq!(format!("{}", enum_error), "Enum parse error: enum error");
 
         let process_error = BPMNParseError::ProcessError(ProcessError::FlowObjectAlreadyExists(
-            "process error".to_string(),
+            FlowObjectId::new("flow-object-id"),
         ));
         assert_eq!(
             format!("{}", process_error),

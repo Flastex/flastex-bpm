@@ -13,6 +13,16 @@ pub enum EventType {
     IntermediateEvent(Event),
 }
 
+impl EventType {
+    pub fn to_type(&self) -> Type {
+        match self {
+            EventType::StartEvent(_) => Type::StartEvent,
+            EventType::EndEvent(_) => Type::EndEvent,
+            EventType::IntermediateEvent(_) => Type::IntermediateEvent,
+        }
+    }
+}
+
 impl Type {
     pub fn to_event_type(&self, event: Event) -> EventType {
         match self {
@@ -26,7 +36,7 @@ impl Type {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Event {
     pub name: String,
-     event_type: Type,
+    event_type: Type,
 }
 
 impl Event {

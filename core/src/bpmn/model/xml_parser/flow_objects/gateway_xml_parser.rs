@@ -3,12 +3,11 @@
 
 use std::str::FromStr;
 
-use crate::bpmn::model::flow_objects::{
-    gateway, FlowObject, FlowObjectId, FlowObjectType
-};
+use crate::bpmn::model::connecting_objects::sequence_flows::SequenceFlowId;
+use crate::bpmn::model::flow_objects::{gateway, FlowObject, FlowObjectId, FlowObjectType};
 
 use crate::bpmn::model::flow_objects::gateway::{
-    EventBasedGatewayType, ExclusiveGateway, GatewayDirection, GatewayType, ParallelGateway
+    EventBasedGatewayType, ExclusiveGateway, GatewayDirection, GatewayType, ParallelGateway,
 };
 use crate::bpmn::model::{
     errors::BPMNParseError,
@@ -32,7 +31,7 @@ pub(crate) fn parse_gateway_element(
     debug!("Parsing <***gateway> element");
     let tag_name =
         extract_tag_name(element).map_err(|err| BPMNParseError::XmlParseError(err.to_string()))?;
-    let id: FlowObjectId = extract_attribute(element, &QName(b"id"))?;
+    let id: FlowObjectId = extract_attribute(element, &QName(b"id"))?.into();
     let name = extract_attribute(element, &QName(b"name"))?;
     let gateway_type = gateway::Type::from_str(&tag_name)?;
     debug!("Gateway type: {:?}", gateway_type);
@@ -43,7 +42,7 @@ pub(crate) fn parse_gateway_element(
         None => GatewayDirection::Unspecified,
     };
 
-    let gateway: GatewayType  = match gateway_type {
+    let gateway: GatewayType = match gateway_type {
         // ComplexGateway with multiple activation conditions
         gateway::Type::ComplexGateway => {
             debug!("Parsing ComplexGateway");
@@ -82,7 +81,8 @@ pub(crate) fn parse_gateway_element(
         // ExclusiveGateway with optional default flow
         gateway::Type::ExclusiveGateway => {
             debug!("Parsing ExclusiveGateway");
-            let default_flow = extract_optional_attribute(element, &QName(b"default"))?;
+            let default_flow_str = extract_optional_attribute(element, &QName(b"default"))?;
+            let default_flow: Option<SequenceFlowId> = default_flow_str.map(SequenceFlowId::from);
             GatewayType::ExclusiveGateway(ExclusiveGateway::new(
                 &name,
                 gateway_direction,
@@ -106,7 +106,8 @@ pub(crate) fn parse_gateway_element(
         // InclusiveGateway with optional default flow
         gateway::Type::InclusiveGateway => {
             debug!("Parsing InclusiveGateway");
-            let default_flow = extract_optional_attribute(element, &QName(b"default"))?;
+            let default_flow_str = extract_optional_attribute(element, &QName(b"default"))?;
+            let default_flow: Option<SequenceFlowId> = default_flow_str.map(SequenceFlowId::from);
             GatewayType::InclusiveGateway(InclusiveGateway::new(
                 &name,
                 gateway_direction,
@@ -120,10 +121,7 @@ pub(crate) fn parse_gateway_element(
         }
     };
 
-    let flow_object = FlowObject {
-        id: id.clone(),
-        flow_object_type: FlowObjectType::Gateway(gateway),
-    };
+    let flow_object = FlowObject::new(id, FlowObjectType::Gateway(gateway));
     // Add the parsed gateway to the process
     process.add_flow_object(flow_object)?;
 

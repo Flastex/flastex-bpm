@@ -5,15 +5,30 @@ use std::str::FromStr;
 
 use quick_xml::name::QName;
 
-use crate::{bpmn::model::{errors::BPMNParseError, flow_objects::{event::{Event, EventType}, gateway::{Gateway, GatewayType}, task::{Task, TaskType}, FlowObject, FlowObjectType}, process::Process}, commons::xml::utils::extract_tag_name};
 use crate::commons::xml::utils::extract_attribute;
+use crate::{
+    bpmn::model::{
+        errors::BPMNParseError,
+        flow_objects::{
+            event::{Event, EventType},
+            gateway::{Gateway, GatewayType},
+            task::{Task, TaskType},
+            FlowObject, FlowObjectType,
+        },
+        process::Process,
+    },
+    commons::xml::utils::extract_tag_name,
+};
 
 const ID_QNAME: QName = QName(b"id");
 const NAME_QNAME: QName = QName(b"name");
 const TYPE_QNAME: QName = QName(b"type");
 
 /// function to parse task elements and add them to the process
-pub(super) fn parse_task_element(process: &mut Process, element: &quick_xml::events::BytesStart) -> Result<(), BPMNParseError> {
+pub(super) fn parse_task_element(
+    process: &mut Process,
+    element: &quick_xml::events::BytesStart,
+) -> Result<(), BPMNParseError> {
     let id = extract_attribute(element, &ID_QNAME);
     let name = extract_attribute(element, &NAME_QNAME);
     let task_type_str = extract_attribute(element, &TYPE_QNAME);
@@ -30,9 +45,12 @@ pub(super) fn parse_task_element(process: &mut Process, element: &quick_xml::eve
 }
 
 /// function to parse event elements and add them to the process
-pub(crate) fn parse_event_element(process: &mut Process, element: &quick_xml::events::BytesStart) -> Result<(), BPMNParseError> {
-    let tag_name = extract_tag_name(element)
-        .map_err(|err| BPMNParseError::XmlParseError(err.to_string()))?;  
+pub(crate) fn parse_event_element(
+    process: &mut Process,
+    element: &quick_xml::events::BytesStart,
+) -> Result<(), BPMNParseError> {
+    let tag_name =
+        extract_tag_name(element).map_err(|err| BPMNParseError::XmlParseError(err.to_string()))?;
     let id = extract_attribute(element, &ID_QNAME);
     let name = extract_attribute(element, &NAME_QNAME);
     let event_type = EventType::from_str(&tag_name)?;
@@ -48,7 +66,10 @@ pub(crate) fn parse_event_element(process: &mut Process, element: &quick_xml::ev
 }
 
 /// function to parse gateway elements and add them to the process
-pub(crate) fn parse_gateway_element(process: &mut Process, element: &quick_xml::events::BytesStart) -> Result<(), BPMNParseError> {
+pub(crate) fn parse_gateway_element(
+    process: &mut Process,
+    element: &quick_xml::events::BytesStart,
+) -> Result<(), BPMNParseError> {
     let id = extract_attribute(element, &ID_QNAME);
     let name = extract_attribute(element, &NAME_QNAME);
     let gateway_type_str = extract_attribute(element, &TYPE_QNAME);

@@ -1,14 +1,59 @@
 // This file is part of Flastex BPM, an AGPLv3 licensed project.
 // See the LICENSE.md file at the root of the repository for details.
 
-use std::{any::Any, fmt::Debug};
+use std::fmt::{self, Debug};
 
-use strum::EnumString;
+use serde::{Deserialize, Serialize};
 
 use crate::bpmn::model::{flow_objects::FlowObjectId, script::Script};
 
 /// Alias for Sequence Flow IDs used in BPMN elements.
-pub type SequenceFlowId = String;
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct SequenceFlowId(String);
+
+impl SequenceFlowId {
+    pub fn new(id: &str) -> Self {
+        SequenceFlowId(id.to_string())
+    }
+}
+
+impl fmt::Display for SequenceFlowId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for SequenceFlowId {
+    fn from(id: String) -> Self {
+        SequenceFlowId(id)
+    }
+}
+
+impl From<&str> for SequenceFlowId {
+    fn from(id: &str) -> Self {
+        SequenceFlowId(id.to_string())
+    }
+}
+
+impl std::ops::Deref for SequenceFlowId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl PartialEq<str> for SequenceFlowId {
+    fn eq(&self, other: &str) -> bool {
+        self.0 == other
+    }
+}
+
+impl PartialEq<&str> for SequenceFlowId {
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
 
 /// Enum to represent the "isImmediate" attribute.
 ///
@@ -35,6 +80,15 @@ impl Default for ImmediateFlag {
     }
 }
 
+/// Enum representing the type and behavior of sequence flow.
+#[derive(Clone, Debug)]
+pub enum SequenceFlowType {
+    /// Represents a normal flow without any conditions.
+    Normal(NormalSequenceFlow),
+    /// Represents a conditional flow with an optional script condition.
+    Conditional(ConditionalSequenceFlow),
+}
+
 /// Represents a BPMN sequence flow.
 #[derive(Clone, Debug)]
 pub struct SequenceFlow {
@@ -42,162 +96,134 @@ pub struct SequenceFlow {
     source_ref: FlowObjectId,
     target_ref: FlowObjectId,
     is_immediate: ImmediateFlag,
-    sequence_flow_behavior: Box<dyn SequenceFlowBehavior>,
+    sequence_flow_type: SequenceFlowType,
 }
 
 impl SequenceFlow {
-    /// Creates a new sequence flow with default values.
-    pub fn new() -> Self {
-        SequenceFlow {
-            id: FlowObjectId::default(),
-            source_ref: FlowObjectId::default(),
-            target_ref: FlowObjectId::default(),
-            is_immediate: ImmediateFlag::default(),
-            sequence_flow_behavior: Box::new(NormalFlow),
-        }
-    }
-
-    /// Returns the ID of the sequence flow.
+    /// Accessor for the sequence flow ID.
     pub fn id(&self) -> &SequenceFlowId {
         &self.id
     }
 
-    /// Sets the ID of the sequence flow.
-    pub fn set_id(&mut self, id: FlowObjectId) -> &mut Self {
-        self.id = id;
-        self
-    }
-
-    ///  Returns the source reference ID.
+    /// Accessor for the source reference ID.
     pub fn source_ref(&self) -> &FlowObjectId {
         &self.source_ref
     }
 
-    /// Sets the source reference ID.
-    pub fn set_source_ref(&mut self, source_ref: FlowObjectId) -> &mut Self {
-        self.source_ref = source_ref;
-        self
-    }
-
-    /// Returns the target reference ID.
+    /// Accessor for the target reference ID.
     pub fn target_ref(&self) -> &FlowObjectId {
         &self.target_ref
     }
 
-    /// Sets the target reference ID.
-    pub fn set_target_ref(&mut self, target_ref: FlowObjectId) -> &mut Self {
-        self.target_ref = target_ref;
+    /// Accessor for the "isImmediate" flag.
+    pub fn is_immediate(&self) -> &ImmediateFlag {
+        &self.is_immediate
+    }
+
+    /// Accessor for the flow type.
+    pub fn flow_type(&self) -> &SequenceFlowType {
+        &self.sequence_flow_type
+    }
+
+    /// Creates a new builder for `SequenceFlow`.
+    pub fn builder() -> SequenceFlowBuilder {
+        SequenceFlowBuilder::new()
+    }
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum SequenceFlowBuilderError {
+    #[error("SequenceFlow ID must be set")]
+    MissingId,
+    #[error("Source reference must be set")]
+    MissingSourceRef,
+    #[error("Target reference must be set")]
+    MissingTargetRef,
+    #[error("Sequence flow type must be set")]
+    MissingSequenceFlowType,
+}
+
+/// Builder for `SequenceFlow`.
+#[derive(Clone, Debug, Default)]
+pub struct SequenceFlowBuilder {
+    id: Option<SequenceFlowId>,
+    source_ref: Option<FlowObjectId>,
+    target_ref: Option<FlowObjectId>,
+    is_immediate: ImmediateFlag,
+    sequence_flow_type: Option<SequenceFlowType>,
+}
+
+impl SequenceFlowBuilder {
+    pub fn new() -> Self {
+        SequenceFlowBuilder {
+            id: None,
+            source_ref: None,
+            target_ref: None,
+            is_immediate: ImmediateFlag::default(),
+            sequence_flow_type: None,
+        }
+    }
+
+    pub fn id(&mut self, id: SequenceFlowId) -> &mut Self {
+        self.id = Some(id);
         self
     }
 
-    /// Returns the "isImmediate" flag.
-    pub fn is_immediate(&self) -> ImmediateFlag {
-        self.is_immediate.clone()
+    pub fn source_ref(&mut self, source_ref: FlowObjectId) -> &mut Self {
+        self.source_ref = Some(source_ref);
+        self
     }
 
-    /// Sets the "isImmediate" flag.
-    pub fn set_is_immediate(&mut self, is_immediate: ImmediateFlag) -> &mut Self {
+    pub fn target_ref(&mut self, target_ref: FlowObjectId) -> &mut Self {
+        self.target_ref = Some(target_ref);
+        self
+    }
+
+    pub fn is_immediate(&mut self, is_immediate: ImmediateFlag) -> &mut Self {
         self.is_immediate = is_immediate;
         self
     }
 
-    /// Returns the sequence flow behavior.
-    pub fn sequence_flow_behavior(&self) -> Box<&dyn SequenceFlowBehavior> {
-        Box::new(self.sequence_flow_behavior.as_ref())
-    }
-
-    /// Sets the sequence flow behavior.
-    /// See specific methods for setting the behavior.
-    /// - `as_default()`
-    /// - `as_normal()`
-    /// - `as_conditional()`
-    pub fn set_behavior(&mut self, behavior: Box<dyn SequenceFlowBehavior>) -> &mut Self {
-        self.sequence_flow_behavior = behavior;
+    pub fn normal(&mut self) -> &mut Self {
+        self.sequence_flow_type = Some(SequenceFlowType::Normal(NormalSequenceFlow {}));
         self
     }
 
-    /// Sets the behavior to `NormalFlow`.
-    pub fn as_normal(&mut self) -> &mut Self {
-        self.sequence_flow_behavior = Box::new(NormalFlow);
+    pub fn conditional(&mut self, condition: Option<Script>) -> &mut Self {
+        self.sequence_flow_type = Some(SequenceFlowType::Conditional(ConditionalSequenceFlow {
+            condition,
+        }));
         self
     }
 
-    /// Sets the behavior to `ConditionalFlow` with the specified condition expression.
-    pub fn as_conditional(&mut self, condition: Option<Script>) -> &mut Self {
-        self.sequence_flow_behavior = Box::new(ConditionalFlow::new(condition));
-        self
+    /// Finalizes the builder, returning a `SequenceFlow`.
+    pub fn build(self) -> Result<SequenceFlow, SequenceFlowBuilderError> {
+        Ok(SequenceFlow {
+            id: self.id.ok_or(SequenceFlowBuilderError::MissingId)?,
+            source_ref: self
+                .source_ref
+                .ok_or(SequenceFlowBuilderError::MissingSourceRef)?,
+            target_ref: self
+                .target_ref
+                .ok_or(SequenceFlowBuilderError::MissingTargetRef)?,
+            is_immediate: self.is_immediate,
+            sequence_flow_type: self
+                .sequence_flow_type
+                .ok_or(SequenceFlowBuilderError::MissingSequenceFlowType)?,
+        })
     }
 }
 
-/// Enum representing the type of sequence flow.
-#[derive(Clone, EnumString, PartialEq, Debug)]
-pub enum SequenceFlowType {
-    Normal,
-    Conditional,
-}
+#[derive(Clone, PartialEq, Debug)]
+pub struct NormalSequenceFlow;
 
-/// Trait for defining the behavior of sequence flows.
-pub trait SequenceFlowBehavior: Any + Debug + SequenceFlowCloneBoxed {
-    fn r#type(&self) -> SequenceFlowType;
-    fn as_any(&self) -> &dyn Any;
-}
-
-pub trait SequenceFlowCloneBoxed {
-    fn clone_box(&self) -> Box<dyn SequenceFlowBehavior>;
-}
-
-impl<T> SequenceFlowCloneBoxed for T
-where
-    T: 'static + SequenceFlowBehavior + Clone,
-{
-    fn clone_box(&self) -> Box<dyn SequenceFlowBehavior> {
-        Box::new(self.clone())
-    }
-}
-
-/// Clone implementation for `Box<dyn SequenceFlowBehavior>`.
-impl Clone for Box<dyn SequenceFlowBehavior> {
-    fn clone(&self) -> Box<dyn SequenceFlowBehavior> {
-        self.clone_box()
-    }
-}
-
-// Define a default Sequence Flow implementation.
-#[derive(Clone, Debug)]
-pub struct NormalFlow;
-
-impl SequenceFlowBehavior for NormalFlow {
-    fn r#type(&self) -> SequenceFlowType {
-        SequenceFlowType::Normal
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-/// Conditional Flow implementation with a condition expression.
-#[derive(Clone, Debug)]
-pub struct ConditionalFlow {
+#[derive(Clone, PartialEq, Debug)]
+pub struct ConditionalSequenceFlow {
     condition: Option<Script>,
 }
 
-impl ConditionalFlow {
-    pub fn new(condition: Option<Script>) -> Self {
-        ConditionalFlow { condition }
-    }
-
-    pub fn condition_expression(&self) -> Option<&Script> {
+impl ConditionalSequenceFlow {
+    pub fn condition(&self) -> Option<&Script> {
         self.condition.as_ref()
-    }
-}
-
-impl SequenceFlowBehavior for ConditionalFlow {
-    fn r#type(&self) -> SequenceFlowType {
-        SequenceFlowType::Conditional
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
